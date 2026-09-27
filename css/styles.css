@@ -1,0 +1,481 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #FFFFFF;
+    color: #1E293B;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Green Sidebar Gradient inspired by reference */
+.bg-sidebar-gradient {
+    background: linear-gradient(180deg, #45D58A 0%, #35CE84 50%, #2FC77A 100%);
+}
+
+/* Sidebar Nav Items Smooth Hover & Active Transition */
+.nav-link-item {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+                background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                padding 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-link-item:hover:not(.nav-item-active) {
+    transform: translateX(4px);
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Active Navigation Item Cutout Effect with Smooth Transition */
+.nav-item-active {
+    background-color: #FFFFFF !important;
+    color: #059669 !important;
+    font-weight: 800 !important;
+    position: relative;
+    border-top-left-radius: 9999px;
+    border-bottom-left-radius: 9999px;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    z-index: 10;
+    transform: translateX(0) !important;
+    box-shadow: -4px 4px 15px rgba(0, 0, 0, 0.04);
+}
+
+/* Concave Cutouts merging into white main content area */
+.nav-item-active::before {
+    content: '';
+    position: absolute;
+    top: -16px;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    background-color: transparent;
+    border-bottom-right-radius: 16px;
+    box-shadow: 5px 5px 0 5px #FFFFFF;
+    pointer-events: none;
+    z-index: 10;
+    transition: box-shadow 0.2s ease-out;
+}
+
+.nav-item-active::after {
+    content: '';
+    position: absolute;
+    bottom: -16px;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    background-color: transparent;
+    border-top-right-radius: 16px;
+    box-shadow: 5px -5px 0 5px #FFFFFF;
+    pointer-events: none;
+    z-index: 10;
+    transition: box-shadow 0.2s ease-out;
+}
+
+/* Mobile Drawer Clean Rounded Navigation Pill (No Cutout Horns) */
+@media (max-width: 1023px) {
+    .nav-item-active {
+        border-radius: 9999px !important;
+        margin-right: 1rem !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    }
+    .nav-item-active::before,
+    .nav-item-active::after {
+        display: none !important;
+    }
+}
+
+/* Dedicated Media Print Rules for Sales & Revenue Audit Report */
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    
+    #printable-report, #printable-report * {
+        visibility: visible !important;
+    }
+
+    #printable-report {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    @page {
+        size: A4 portrait;
+        margin: 15mm;
+    }
+}
+
+/* Smooth View Switcher Fade & Slide Animation */
+.app-view {
+    animation: fadeInSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.995);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Thermal Printer Machine Jitter Animation */
+@keyframes thermalPrinterVibrate {
+    0%, 100% { transform: translateY(0); }
+    20% { transform: translateY(-1px) translateX(0.8px); }
+    40% { transform: translateY(0.8px) translateX(-0.5px); }
+    60% { transform: translateY(-0.5px) translateX(0.5px); }
+    80% { transform: translateY(0.5px) translateX(-0.8px); }
+}
+
+.animate-printer-vibrate {
+    animation: thermalPrinterVibrate 0.15s infinite linear;
+}
+
+/* Receipt Paper Unrolling / Vertical Slide Reveal Animation (850ms) */
+@keyframes receiptSlideEmerge {
+    0% {
+        max-height: 0px;
+        opacity: 0.15;
+        transform: translateY(-24px) scaleY(0.1);
+        clip-path: inset(0 0 100% 0);
+    }
+    35% {
+        opacity: 0.85;
+    }
+    100% {
+        max-height: 1000px;
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+.animate-receipt-emerge {
+    animation: receiptSlideEmerge 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: top center;
+    overflow: hidden;
+}
+
+/* Scalloped Serrated Cut Edge for Thermal Receipt Paper */
+.receipt-scallop-edge {
+    position: relative;
+}
+
+.receipt-scallop-edge::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background-size: 14px 10px;
+    background-image: radial-gradient(circle at 7px 12px, transparent 7px, #FFFFFF 7px);
+}
+
+/* Upward Flow Animation under Spline Apex Chart */
+@keyframes chartRiseFlow {
+    0% {
+        transform: translateY(40px) scaleY(0.85);
+        opacity: 0.25;
+    }
+    50% {
+        transform: translateY(0px) scaleY(1.05);
+        opacity: 0.65;
+    }
+    100% {
+        transform: translateY(-40px) scaleY(0.85);
+        opacity: 0.25;
+    }
+}
+
+@keyframes chartApexPulse {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(0.98);
+    }
+    50% {
+        opacity: 0.75;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes upwardLightBeam {
+    0% {
+        background-position: 0% 100%;
+    }
+    100% {
+        background-position: 0% 0%;
+    }
+}
+
+.animate-chart-rise-flow {
+    animation: chartRiseFlow 4s ease-in-out infinite alternate;
+}
+
+.animate-chart-apex-pulse {
+    animation: chartApexPulse 3.5s ease-in-out infinite;
+}
+
+.chart-upward-light-lines {
+    background-image: repeating-linear-gradient(
+        0deg,
+        rgba(37, 99, 235, 0.08) 0px,
+        rgba(37, 99, 235, 0.08) 2px,
+        transparent 2px,
+        transparent 24px
+    );
+    background-size: 100% 48px;
+    animation: upwardLightBeam 3.5s linear infinite;
+}
+
+/* Upward Entrance Animations */
+.animate-entrance-up {
+    animation: entranceUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+}
+
+@keyframes entranceUp {
+    0% {
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Drag & Drop Active States */
+.drag-over-active {
+    background-color: #D1FAE5 !important;
+    border-color: #10B981 !important;
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);
+}
+
+/* Soft Pastel Card Background Colors matching reference */
+.bg-pastel-pink { background-color: #FFF0F7; }
+.bg-pastel-blue { background-color: #EEF8FF; }
+.bg-pastel-green { background-color: #F1FBEA; }
+.bg-pastel-yellow { background-color: #FFF8E8; }
+.bg-pastel-purple { background-color: #F4F0FF; }
+.bg-pastel-orange { background-color: #FFF3EB; }
+
+/* Subtle Shadows */
+.shadow-soft {
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+}
+.shadow-card {
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+}
+.shadow-green {
+    box-shadow: 0 10px 25px -5px rgba(53, 206, 132, 0.4);
+}
+
+/* Custom Keyframe Animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    70% {
+        transform: scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-slide-up {
+    animation: slideInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-right {
+    animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pop {
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Flowbite Chart Styling Customization */
+.apexcharts-tooltip {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+    border-radius: 16px !important;
+    padding: 10px 14px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+.apexcharts-tooltip-title {
+    font-weight: 800 !important;
+    color: #0F172A !important;
+    background: transparent !important;
+    border-bottom: none !important;
+    margin-bottom: 4px !important;
+    padding: 0 !important;
+}
+
+/* Glassmorphism utilities */
+.backdrop-blur-md {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Printing styles for Receipt & Website Reports */
+@media print {
+    html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    body * {
+        visibility: hidden !important;
+    }
+
+    /* Force receipt modal and contents visible */
+    #receipt-modal,
+    #receipt-modal *,
+    #printable-receipt-wrapper,
+    #printable-receipt-wrapper *,
+    #printable-receipt,
+    #printable-receipt *,
+    #receipt-sheet,
+    #receipt-sheet * {
+        visibility: visible !important;
+    }
+
+    #receipt-modal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        display: block !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        z-index: 99999 !important;
+    }
+
+    #receipt-modal .modal-backdrop,
+    #receipt-modal #printer-device-slot,
+    #receipt-modal #receipt-actions {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    #receipt-modal .modal-content {
+        position: relative !important;
+        transform: none !important;
+        opacity: 1 !important;
+        box-shadow: none !important;
+        max-width: 360px !important;
+        width: 360px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+    }
+
+    #printable-receipt-wrapper {
+        overflow: visible !important;
+        max-height: none !important;
+        height: auto !important;
+        transform: none !important;
+        margin: 0 !important;
+    }
+
+    #printable-receipt {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #receipt-sheet {
+        box-shadow: none !important;
+        border: 1px dashed #64748b !important;
+        border-radius: 8px !important;
+        padding: 16px !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-family: monospace, sans-serif !important;
+    }
+
+    /* Executive Reports Print Container */
+    #printable-report,
+    #printable-report * {
+        visibility: visible !important;
+    }
+
+    #printable-report {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        z-index: 999999 !important;
+    }
+}

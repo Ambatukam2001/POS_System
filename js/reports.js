@@ -202,7 +202,9 @@ function renderFlowbiteSalesChart(period = 'year') {
                 }
             }
         },
-        dataLabels: { enabled: false },
+        dataLabels: { 
+            enabled: false
+        },
         stroke: {
             curve: 'smooth',
             width: [3.5, 3.0],
@@ -243,8 +245,8 @@ function renderFlowbiteSalesChart(period = 'year') {
         },
         xaxis: {
             categories: categories,
-            axisBorder: { show: false },
-            axisTicks: { show: false },
+            axisBorder: { show: true, color: '#E2E8F0' },
+            axisTicks: { show: true, color: '#E2E8F0' },
             labels: {
                 style: {
                     colors: '#64748B',
@@ -254,18 +256,30 @@ function renderFlowbiteSalesChart(period = 'year') {
             }
         },
         yaxis: {
-            show: false,
-            axisBorder: { show: false },
-            axisTicks: { show: false },
-            labels: { show: false }
+            show: true,
+            axisBorder: { show: true, color: '#E2E8F0' },
+            axisTicks: { show: true, color: '#E2E8F0' },
+            labels: {
+                show: true,
+                formatter: (val) => val >= 1000 ? `₱${(val/1000).toFixed(0)}k` : `₱${val}`,
+                style: {
+                    colors: '#64748B',
+                    fontSize: '10px',
+                    fontWeight: 700
+                }
+            }
         },
         grid: {
-            show: false,
-            padding: { top: 20, right: 20, bottom: 0, left: 20 }
+            show: true,
+            borderColor: '#F1F5F9',
+            strokeDashArray: 4,
+            xaxis: { lines: { show: true } },
+            yaxis: { lines: { show: true } },
+            padding: { top: 20, right: 15, bottom: 5, left: 10 }
         },
         legend: {
             show: true,
-            position: 'right',
+            position: window.innerWidth < 768 ? 'bottom' : 'right',
             horizontalAlign: 'center',
             fontSize: '11px',
             fontFamily: "'Plus Jakarta Sans', sans-serif",

@@ -322,6 +322,7 @@ class App {
         // Auto-close mobile sidebar drawer on navigation
         const sidebar = document.getElementById('app-sidebar');
         const sidebarOverlay = document.getElementById('sidebar-mobile-overlay');
+
         if (sidebar) sidebar.classList.add('max-lg:-translate-x-full');
         if (sidebarOverlay) {
             sidebarOverlay.classList.remove('opacity-100');
@@ -345,16 +346,28 @@ class App {
 
         // Show right order panel ONLY on POS view; hide on Admin management views
         const orderPanel = document.getElementById('order-panel');
+        const productSection = document.getElementById('pos-product-section');
         if (orderPanel) {
             if (viewName === 'pos') {
-                orderPanel.classList.remove('hidden');
+                // Desktop: always show both panels side-by-side
+                // Mobile: start with menu tab visible, order panel hidden (tabs control it)
+                if (window.innerWidth >= 1024) {
+                    orderPanel.classList.remove('hidden');
+                } else {
+                    // Reset to menu-first state on mobile
+                    if (productSection) productSection.classList.remove('hidden');
+                    orderPanel.classList.add('hidden');
+                    if (typeof window._posTabReset === 'function') window._posTabReset();
+                }
             } else {
                 orderPanel.classList.add('hidden');
+                // Also reset mobile tab state when leaving POS
+                if (productSection) productSection.classList.remove('hidden');
             }
         }
 
         // Update active sidebar nav button highlighting & concave cutout styling
-        const navLinks = document.querySelectorAll('[data-view-target]');
+        const navLinks = document.querySelectorAll('aside [data-view-target]');
         navLinks.forEach(link => {
             const isMatch = link.dataset.viewTarget === viewName;
             if (isMatch) {
@@ -365,6 +378,36 @@ class App {
                 link.classList.add('text-white/80', 'hover:bg-white/10', 'hover:text-white', 'rounded-l-full');
             }
         });
+
+        // Update active state on mobile bottom navbar buttons
+        const mobileNavBtns = document.querySelectorAll('.mobile-nav-btn');
+        mobileNavBtns.forEach(btn => {
+            const isMatch = btn.dataset.viewTarget === viewName;
+            const indicator = btn.querySelector('.mobile-nav-indicator');
+            if (isMatch) {
+                btn.classList.add('mobile-nav-active');
+                if (indicator) indicator.classList.remove('opacity-0');
+            } else {
+                btn.classList.remove('mobile-nav-active');
+                if (indicator) indicator.classList.add('opacity-0');
+            }
+        });
+
+        // Update Header View Title
+        const headerTitleEl = document.getElementById('header-view-title');
+        if (headerTitleEl) {
+            const titleMap = {
+                pos: 'Fresh Bites Terminal',
+                dashboard: 'Executive Dashboard',
+                reports: 'Sales & Revenue Reports',
+                products: 'Product Catalog',
+                inventory: 'Inventory & Stock Tracking',
+                transactions: 'Transaction History',
+                users: 'User & Staff Management',
+                customers: 'Customer Directory'
+            };
+            headerTitleEl.textContent = titleMap[viewName] || 'Fresh Bites Terminal';
+        }
 
         // Trigger view-specific render handlers
         if (viewName === 'pos') {

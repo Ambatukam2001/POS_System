@@ -63,6 +63,7 @@ export class CartManager {
 
         this.save();
         showToast(`✓ ${product.name} added to cart`, 'success');
+        this._animateAdd = true;
         this.renderCartUI();
         return true;
     }
@@ -163,7 +164,7 @@ export class CartManager {
                 </div>
             `;
         } else {
-            cartListContainer.innerHTML = this.cart.map(item => `
+            cartListContainer.innerHTML = [...this.cart].reverse().map(item => `
                 <div class="flex items-center justify-between gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-all duration-200 group border border-transparent hover:border-slate-100 animate-slide-right" data-cart-item-id="${item.product.id}">
                     <div class="flex items-center gap-3 min-w-0">
                         <img src="${item.product.image}" alt="${item.product.name}" class="w-11 h-11 rounded-full object-cover shadow-sm group-hover:scale-105 transition-transform duration-200 shrink-0">
@@ -185,6 +186,22 @@ export class CartManager {
                     </div>
                 </div>
             `).join('');
+
+            // Animate newest (first rendered) item when a product was just added
+            if (this._animateAdd) {
+                this._animateAdd = false;
+                requestAnimationFrame(() => {
+                    const firstItem = cartListContainer.querySelector('[data-cart-item-id]');
+                    if (firstItem) {
+                        firstItem.classList.remove('cart-item-pop');
+                        void firstItem.offsetWidth; // force reflow so animation restarts
+                        firstItem.classList.add('cart-item-pop');
+                        firstItem.addEventListener('animationend', () => {
+                            firstItem.classList.remove('cart-item-pop');
+                        }, { once: true });
+                    }
+                });
+            }
         }
 
         // Update Totals
@@ -206,23 +223,9 @@ export class CartManager {
                 : 'hidden';
         }
 
-        // Mobile Cart Badge & Floating Bar Updates
+        // Mobile Cart Badge Updates
         const mobileBadge = document.getElementById('pos-mobile-cart-badge');
-        const floatCartBar = document.getElementById('pos-mobile-floating-cart-bar');
-        const floatCount = document.getElementById('floating-cart-count');
-        const floatTotal = document.getElementById('floating-cart-total');
-
         if (mobileBadge) mobileBadge.textContent = itemCount;
-        if (floatCount) floatCount.textContent = itemCount;
-        if (floatTotal) floatTotal.textContent = formatCurrency(total);
-
-        if (floatCartBar) {
-            if (itemCount > 0) {
-                floatCartBar.classList.remove('hidden');
-            } else {
-                floatCartBar.classList.add('hidden');
-            }
-        }
 
         if (customerNameEl) {
             customerNameEl.textContent = this.selectedCustomer.name;

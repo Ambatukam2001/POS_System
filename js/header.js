@@ -3,8 +3,6 @@
  */
 
 import { authInstance, ROLES } from './auth.js';
-import { productsInstance } from './products.js';
-import { initPOSView } from './pos.js';
 import { openModal, closeModal } from './modal.js';
 import { showToast } from './toast.js';
 
@@ -99,27 +97,47 @@ function setupNotificationBell() {
 }
 
 function setupUserProfileModal() {
-    const profileTrigger = document.getElementById('header-user-profile-trigger');
-    if (profileTrigger) {
-        profileTrigger.onclick = () => {
-            const user = authInstance.getCurrentUser() || { name: 'Dimacaling', email: 'admin@pos.system', role: 'ADMIN' };
-            const nameEl = document.getElementById('profile-modal-name');
-            const emailEl = document.getElementById('profile-modal-email');
-            const roleEl = document.getElementById('profile-modal-role');
+    const profileTriggers = [
+        document.getElementById('header-user-profile-trigger'),
+        document.getElementById('btn-mobile-nav-profile')
+    ];
 
-            const nameInput = document.getElementById('profile-input-name');
-            const emailInput = document.getElementById('profile-input-email');
-            const passInput = document.getElementById('profile-input-password');
+    const openProfileModal = () => {
+        const user = authInstance.getCurrentUser() || { name: 'Dimacaling', email: 'admin@pos.system', role: 'ADMIN' };
+        const nameEl = document.getElementById('profile-modal-name');
+        const emailEl = document.getElementById('profile-modal-email');
+        const roleEl = document.getElementById('profile-modal-role');
 
-            if (nameEl) nameEl.textContent = user.name;
-            if (emailEl) emailEl.textContent = user.email;
-            if (roleEl) roleEl.textContent = user.role === ROLES.ADMIN ? 'Administrator' : 'Cashier';
+        const nameInput = document.getElementById('profile-input-name');
+        const emailInput = document.getElementById('profile-input-email');
+        const passInput = document.getElementById('profile-input-password');
 
-            if (nameInput) nameInput.value = user.name || '';
-            if (emailInput) emailInput.value = user.email || '';
-            if (passInput) passInput.value = '';
+        if (nameEl) nameEl.textContent = user.name;
+        if (emailEl) emailEl.textContent = user.email;
+        if (roleEl) roleEl.textContent = user.role === ROLES.ADMIN ? 'Administrator' : 'Cashier';
 
-            openModal('user-profile-modal');
+        if (nameInput) nameInput.value = user.name || '';
+        if (emailInput) emailInput.value = user.email || '';
+        if (passInput) passInput.value = '';
+
+        openModal('user-profile-modal');
+    };
+
+    profileTriggers.forEach(btn => {
+        if (btn) btn.onclick = openProfileModal;
+    });
+
+    // Profile Modal Log Out Button
+    const modalLogoutBtn = document.getElementById('modal-profile-logout-btn');
+    if (modalLogoutBtn) {
+        modalLogoutBtn.onclick = () => {
+            closeModal('user-profile-modal');
+            authInstance.logout();
+            const loginView = document.getElementById('view-login');
+            const mainApp = document.getElementById('main-app-container');
+            if (loginView) loginView.classList.remove('hidden');
+            if (mainApp) mainApp.classList.add('hidden');
+            showToast('Logged out successfully.', 'info');
         };
     }
 }

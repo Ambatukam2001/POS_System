@@ -4,6 +4,7 @@
 
 import { storage, generateId } from './utils.js';
 import { showToast } from './toast.js';
+import { supabaseClient } from './supabase.js';
 
 const INITIAL_CUSTOMERS = [
     {
@@ -47,6 +48,68 @@ const INITIAL_CUSTOMERS = [
 export class CustomerManager {
     constructor() {
         this.customers = storage.get('customers', INITIAL_CUSTOMERS);
+        this.syncFromSupabase();
+
+        // Setup live sync polling every 4 seconds
+        setInterval(() => this.syncFromSupabase(), 4000);
+
+        // Setup real-time WebSocket subscription if available
+        if (typeof window !== 'undefined') {
+            supabaseClient.subscribeToRealtime((table) => {
+                if (table === 'customers') {
+                    console.log('[Realtime] Live customer update received');
+                    this.syncFromSupabase();
+                }
+            });
+        }
+    }
+
+    async syncFromSupabase() {
+        try {
+            const cloudData = await supabaseClient.getCustomers();
+
+            if (cloudData === null) return; // network error
+
+            if (cloudData.length === 0) {
+                // Supabase empty — seed local customers (skip walk-in)
+                await supabaseClient.seedCustomers(this.customers);
+                const seeded = await supabaseClient.getCustomers();
+                if (seeded && seeded.length > 0) {
+                    this.customers = this._mapCloud(seeded);
+                    this.save();
+                }
+            } else {
+                const cloudMapped = this._mapCloud(cloudData);
+                const cloudNames = new Set(cloudMapped.map(c => c.name.toLowerCase()));
+                const localOnly = this.customers.filter(c => !cloudNames.has(c.name.toLowerCase()));
+                const updatedCustomers = [...cloudMapped, ...localOnly];
+                const hasChanged = JSON.stringify(this.customers) !== JSON.stringify(updatedCustomers);
+                this.customers = updatedCustomers;
+                this.save();
+
+                if (hasChanged && typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+                    window.dispatchEvent(new CustomEvent('supabase-customers-updated', { detail: this.customers }));
+                }
+            }
+
+            if (typeof window !== 'undefined' && window._renderCustomerDirectory) {
+                window._renderCustomerDirectory();
+            }
+        } catch (e) {
+            console.warn('[Supabase] Customer sync notice:', e.message);
+        }
+    }
+
+    _mapCloud(cloudData) {
+        return cloudData.map(c => ({
+            id: c.id ? String(c.id) : generateId('CUST'),
+            name: c.name,
+            phone: c.phone || 'N/A',
+            email: c.email || 'N/A',
+            address: c.address || 'N/A',
+            totalPurchases: parseFloat(c.total_purchases || c.totalPurchases) || 0,
+            lastTransaction: c.last_transaction || c.lastTransaction || 'N/A'
+        }));
     }
 
     save() {
@@ -74,6 +137,15 @@ export class CustomerManager {
 
         this.customers.unshift(customer);
         this.save();
+        supabaseClient.upsertCustomer(customer).then(inserted => {
+            if (inserted && inserted.id) {
+                const idx = this.customers.findIndex(c => c.name.toLowerCase() === customer.name.toLowerCase());
+                if (idx !== -1) {
+                    this.customers[idx].id = String(inserted.id);
+                    this.save();
+                }
+            }
+        });
         showToast(`Added customer ${customer.name}`, 'success');
         return customer;
     }
@@ -89,8 +161,15 @@ export class CustomerManager {
         if (existing) {
             if (data.phone && data.phone !== 'N/A') existing.phone = data.phone;
             if (data.email && data.email !== 'N/A') existing.email = data.email;
+            if (data.purchaseAmount) existing.totalPurchases = (parseFloat(existing.totalPurchases) || 0) + (parseFloat(data.purchaseAmount) || 0);
             existing.lastTransaction = 'Just now';
             this.save();
+            supabaseClient.upsertCustomer({ ...existing, purchaseAmount: data.purchaseAmount }).then(updated => {
+                if (updated && updated.id) {
+                    existing.id = String(updated.id);
+                    this.save();
+                }
+            });
             return existing;
         } else {
             const newCust = {
@@ -99,11 +178,17 @@ export class CustomerManager {
                 phone: data.phone || 'N/A',
                 email: data.email || 'N/A',
                 address: data.address || 'Standard Order',
-                totalPurchases: 0,
+                totalPurchases: parseFloat(data.purchaseAmount) || 0,
                 lastTransaction: 'Just now'
             };
             this.customers.unshift(newCust);
             this.save();
+            supabaseClient.upsertCustomer({ ...newCust, purchaseAmount: data.purchaseAmount }).then(inserted => {
+                if (inserted && inserted.id) {
+                    newCust.id = String(inserted.id);
+                    this.save();
+                }
+            });
             return newCust;
         }
     }

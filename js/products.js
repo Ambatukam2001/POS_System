@@ -3,6 +3,7 @@
  */
 
 import { storage, generateId } from './utils.js';
+import { supabaseClient } from './supabase.js';
 
 const INITIAL_PRODUCTS = [
     {
@@ -197,6 +198,81 @@ const INITIAL_PRODUCTS = [
 export class ProductManager {
     constructor() {
         this.products = storage.get('products', INITIAL_PRODUCTS);
+        this.syncFromSupabase();
+        
+        // Setup live sync polling every 4 seconds
+        setInterval(() => this.syncFromSupabase(), 4000);
+
+        // Setup real-time WebSocket subscription if available
+        if (typeof window !== 'undefined') {
+            supabaseClient.subscribeToRealtime((table) => {
+                if (table === 'products') {
+                    console.log('[Realtime] Live product update received');
+                    this.syncFromSupabase();
+                }
+            });
+        }
+    }
+
+    async syncFromSupabase() {
+        try {
+            const cloudProducts = await supabaseClient.getProducts();
+
+            // Network error — keep local data as-is
+            if (cloudProducts === null) return;
+
+            if (cloudProducts.length === 0) {
+                // ── Supabase is EMPTY: seed all local products ──
+                console.log('[Supabase] Products table empty — seeding', this.products.length, 'products...');
+                for (const product of this.products) {
+                    await supabaseClient.addProduct(product);
+                }
+                // Re-sync to get the real integer IDs Supabase assigned
+                const seeded = await supabaseClient.getProducts();
+                if (seeded && seeded.length > 0) {
+                    this.products = this._mapCloudProducts(seeded);
+                    this.save();
+                    console.log('[Supabase] Seeded & synced', this.products.length, 'products.');
+                }
+            } else {
+                // ── Supabase has data: use it as source of truth ──
+                const updatedProducts = this._mapCloudProducts(cloudProducts);
+                const hasChanged = JSON.stringify(this.products) !== JSON.stringify(updatedProducts);
+                this.products = updatedProducts;
+                this.save();
+
+                if (hasChanged && typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+                    window.dispatchEvent(new CustomEvent('supabase-products-updated', { detail: this.products }));
+                }
+            }
+
+            if (typeof window !== 'undefined') {
+                if (window._renderPOSProducts) window._renderPOSProducts();
+                if (window._renderAdminProducts) window._renderAdminProducts();
+            }
+        } catch (e) {
+            console.warn('[Supabase] Product sync notice:', e.message);
+        }
+    }
+
+    _mapCloudProducts(cloudProducts) {
+        return cloudProducts.map(p => ({
+            id: p.id ? String(p.id) : generateId('PRD'),
+            sku: p.sku || `SKU-${p.id}`,
+            barcode: p.barcode || `48065${p.id || 100}`,
+            name: p.name,
+            category: p.category || 'Food',
+            weight: p.weight || '300g',
+            price: parseFloat(p.price) || 0,
+            cost: parseFloat(p.cost) || 0,
+            rating: parseFloat(p.rating) || 4.5,
+            stock: parseInt(p.stock) || 0,
+            minStock: parseInt(p.min_stock || p.minStock) || 5,
+            bgColor: p.bg_color || p.bgColor || 'bg-pastel-pink',
+            image: p.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80',
+            favorite: Boolean(p.favorite),
+            status: p.status || (parseInt(p.stock) <= 0 ? 'Out of Stock' : 'In Stock')
+        }));
     }
 
     save() {
@@ -212,8 +288,9 @@ export class ProductManager {
     }
 
     addProduct(data) {
+        const tempId = generateId('PRD'); // temporary local ID
         const newProduct = {
-            id: generateId('PRD'),
+            id: tempId,
             sku: data.sku || `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
             barcode: data.barcode || `48065${Math.floor(1000000 + Math.random() * 9000000)}`,
             name: data.name,
@@ -231,6 +308,19 @@ export class ProductManager {
         };
         this.products.unshift(newProduct);
         this.save();
+
+        // Push to Supabase and replace temp ID with real Supabase integer ID
+        supabaseClient.addProduct(newProduct).then(inserted => {
+            if (inserted && inserted.id) {
+                const idx = this.products.findIndex(p => p.id === tempId);
+                if (idx !== -1) {
+                    this.products[idx].id = String(inserted.id);
+                    this.save();
+                    if (window._renderPOSProducts) window._renderPOSProducts();
+                }
+            }
+        }).catch(e => console.warn('[Supabase] addProduct async error:', e));
+
         return newProduct;
     }
 
@@ -255,6 +345,8 @@ export class ProductManager {
                 status
             };
             this.save();
+            // Sync full product record — pass SKU as fallback for non-numeric IDs
+            supabaseClient.updateProduct(id, this.products[index]);
             return this.products[index];
         }
         return null;
@@ -264,13 +356,20 @@ export class ProductManager {
         const product = this.getById(id);
         if (product) {
             const newStock = Math.max(0, product.stock - qty);
-            this.updateProduct(id, { stock: newStock });
+            product.stock = newStock;
+            product.status = newStock <= 0 ? 'Out of Stock' : (newStock <= product.minStock ? 'Low Stock' : 'In Stock');
+            this.save();
+            // Pass SKU as fallback so write succeeds even for non-numeric IDs
+            supabaseClient.updateProductStock(id, newStock, product.sku);
         }
     }
 
     deleteProduct(id) {
+        const product = this.getById(id);
+        const sku = product ? product.sku : null;
         this.products = this.products.filter(p => p.id !== id);
         this.save();
+        supabaseClient.deleteProduct(id, sku); // pass SKU as fallback
     }
 
     toggleFavorite(id) {

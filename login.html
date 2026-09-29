@@ -30,6 +30,21 @@
 </head>
 <body class="h-screen w-screen bg-white text-slate-800 antialiased overflow-hidden">
 
+    <!-- SESSION GUARD: Redirect already-logged-in users to the app -->
+    <script>
+        (function() {
+            try {
+                // The storage utility in utils.js prefixes keys with 'pos_'
+                var session = localStorage.getItem('pos_current_user');
+                var user = session ? JSON.parse(session) : null;
+                if (user && user.username) {
+                    // Already logged in — send to the main app
+                    window.location.replace('index.html');
+                }
+            } catch(e) { /* ignore */ }
+        })();
+    </script>
+
     <!-- Split Screen Login Container -->
     <div class="w-full h-full flex flex-col md:flex-row overflow-y-auto relative">
 

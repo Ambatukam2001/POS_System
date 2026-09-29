@@ -12,7 +12,6 @@ export function initPOSView() {
     let currentSearch = '';
     let currentSort = 'recommended';
     let selectedProductId = null;
-    let selectedQty = 1;
 
     const gridContainer = document.getElementById('pos-product-grid');
     const searchInput = document.getElementById('pos-search-input');
@@ -49,6 +48,9 @@ export function initPOSView() {
         } else {
             gridContainer.innerHTML = products.map(product => {
                 const isSelected = product.id === selectedProductId;
+                const itemInCart = cartInstance.getItems().find(i => i.product.id === product.id);
+                const qtyInCart = itemInCart ? itemInCart.quantity : 0;
+
                 return `
                 <div draggable="true" class="
                     group relative rounded-[24px] ${product.bgColor || 'bg-pastel-pink'} p-4 
@@ -59,12 +61,20 @@ export function initPOSView() {
                     animate-slide-up transition-all duration-300 cubic-bezier(0.16, 1, 0.3, 1)
                 " data-product-id="${product.id}">
                     
-                    <!-- Header Badges: Rating & Favorite -->
+                    <!-- Header Badges: Rating, Selected Badge & Favorite -->
                     <div class="flex items-center justify-between w-full z-10">
-                        <span class="inline-flex items-center gap-1 bg-slate-900/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md shadow-xs">
-                            <i data-lucide="star" class="w-3 h-3 text-amber-400 fill-amber-400"></i>
-                            ${product.rating.toFixed(1)}
-                        </span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-flex items-center gap-1 bg-slate-900/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md shadow-xs">
+                                <i data-lucide="star" class="w-3 h-3 text-amber-400 fill-amber-400"></i>
+                                ${product.rating.toFixed(1)}
+                            </span>
+                            ${isSelected ? `
+                                <span class="inline-flex items-center gap-1 bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs animate-pulse">
+                                    <i data-lucide="check-circle" class="w-3 h-3 text-white"></i>
+                                    Selected
+                                </span>
+                            ` : ''}
+                        </div>
                         
                         <button class="w-8 h-8 rounded-full bg-white/80 hover:bg-white active:scale-75 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all duration-200 shadow-xs btn-favorite" data-id="${product.id}">
                             <i data-lucide="heart" class="w-4 h-4 ${product.favorite ? 'text-rose-500 fill-rose-500 animate-heart-pop' : ''}"></i>
@@ -81,53 +91,33 @@ export function initPOSView() {
                         ` : ''}
                     </div>
 
-                    <!-- Product Info Footer -->
-                    <div class="space-y-1 z-10 pt-1">
+                    <!-- Product Info Footer & Quantity Controller -->
+                    <div class="space-y-2 z-10 pt-1">
                         <div class="flex items-baseline justify-between">
                             <h3 class="text-sm font-extrabold text-slate-900 leading-tight group-hover:text-emerald-700 transition-colors">${product.name}</h3>
                             <span class="text-[11px] text-slate-400 font-semibold bg-white/60 px-1.5 py-0.5 rounded-md">${product.weight || '300g'}</span>
                         </div>
                         <div class="flex items-center justify-between pt-1">
                             <span class="text-base font-extrabold text-slate-900">${formatCurrency(product.price)}</span>
-                        </div>
-                    </div>
-
-                    <!-- Selected Item Details Panel (appears underneath menu item) -->
-                    ${isSelected ? `
-                        <div class="mt-3 pt-3 border-t border-slate-900/10 bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-md space-y-2.5 animate-detail-expand text-slate-800 z-20">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200">
-                                    Selected Item Details
-                                </span>
-                                <button type="button" class="btn-close-details w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 text-slate-500 flex items-center justify-center transition-all cursor-pointer" data-id="${product.id}">
-                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-
-                            <div class="flex items-center justify-between text-xs text-slate-600 font-semibold">
-                                <span>Category: <strong class="text-slate-900">${product.category}</strong></span>
-                                <span>Stock: <strong class="${product.stock > 0 ? 'text-emerald-600' : 'text-rose-500'}">${product.stock > 0 ? product.stock + ' available' : 'Out of stock'}</strong></span>
-                            </div>
-
-                            <div class="flex items-center justify-between pt-1">
-                                <span class="text-xs font-extrabold text-slate-700">Quantity:</span>
-                                <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                                    <button type="button" class="btn-qty-minus w-7 h-7 rounded-lg bg-white shadow-xs hover:bg-slate-200 active:scale-90 font-extrabold text-slate-700 flex items-center justify-center transition-all cursor-pointer">
-                                        <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+                            
+                            ${product.stock <= 0 ? '' : (qtyInCart > 0 ? `
+                                <div class="flex items-center gap-1.5 bg-white/95 backdrop-blur-md rounded-full p-1 border border-emerald-400 shadow-sm z-20">
+                                    <button type="button" class="btn-card-minus w-7 h-7 rounded-full bg-slate-100 hover:bg-rose-500 hover:text-white flex items-center justify-center text-slate-700 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-90" data-id="${product.id}" title="Decrease quantity">
+                                        <i data-lucide="minus" class="w-3.5 h-3.5 pointer-events-none"></i>
                                     </button>
-                                    <span class="w-7 text-center text-xs font-extrabold text-slate-900">${selectedQty}</span>
-                                    <button type="button" class="btn-qty-plus w-7 h-7 rounded-lg bg-white shadow-xs hover:bg-slate-200 active:scale-90 font-extrabold text-slate-700 flex items-center justify-center transition-all cursor-pointer">
-                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                    <span class="text-xs font-extrabold text-emerald-800 min-w-[20px] text-center select-none">${qtyInCart}</span>
+                                    <button type="button" class="btn-card-plus w-7 h-7 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center text-xs font-bold transition-all cursor-pointer active:scale-90" data-id="${product.id}" title="Increase quantity">
+                                        <i data-lucide="plus" class="w-3.5 h-3.5 pointer-events-none"></i>
                                     </button>
                                 </div>
-                            </div>
-
-                            <button type="button" class="btn-confirm-add-cart w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.95] text-white font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer">
-                                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                                <span>Add to Order — ${formatCurrency(product.price * selectedQty)}</span>
-                            </button>
+                            ` : `
+                                <button type="button" class="btn-card-add-initial text-xs font-extrabold bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white px-3 py-1.5 rounded-full shadow-xs flex items-center gap-1 cursor-pointer transition-all z-20" data-id="${product.id}">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5 pointer-events-none"></i>
+                                    Add
+                                </button>
+                            `)}
                         </div>
-                    ` : ''}
+                    </div>
 
                 </div>
                 `;
@@ -140,6 +130,9 @@ export function initPOSView() {
 
         bindProductGridEvents();
     }
+
+    // Expose renderProducts globally so cart updates refresh card buttons
+    window._renderPOSProducts = renderProducts;
 
     function bindProductGridEvents() {
         if (!gridContainer) return;
@@ -157,53 +150,79 @@ export function initPOSView() {
                 card.classList.remove('opacity-50', 'scale-95');
             };
 
-            // Card Click -> Select Card & show inline item details underneath
+            // Card Body Click → Toggle selection; add to cart on first select
             card.onclick = (e) => {
+                if (e.target.closest('.btn-favorite') || e.target.closest('.btn-card-minus') || e.target.closest('.btn-card-plus') || e.target.closest('.btn-card-add-initial')) {
+                    return; // Handled separately
+                }
+
                 const id = card.dataset.productId;
                 const product = productsInstance.getById(id);
                 if (!product) return;
 
-                if (e.target.closest('.btn-favorite')) {
-                    return; // Handled separately
-                }
-
-                if (e.target.closest('.btn-close-details')) {
-                    e.stopPropagation();
+                // Toggle: clicking the already-selected card deselects it
+                if (selectedProductId === id) {
                     selectedProductId = null;
                     renderProducts();
                     return;
                 }
 
-                if (e.target.closest('.btn-qty-minus')) {
-                    e.stopPropagation();
-                    if (selectedQty > 1) {
-                        selectedQty--;
-                        renderProducts();
-                    }
-                    return;
-                }
-
-                if (e.target.closest('.btn-qty-plus')) {
-                    e.stopPropagation();
-                    selectedQty++;
-                    renderProducts();
-                    return;
-                }
-
-                if (e.target.closest('.btn-confirm-add-cart')) {
-                    e.stopPropagation();
-                    const added = cartInstance.addItem(product, selectedQty);
-                    if (added) {
-                        showToast(`Added ${selectedQty}x ${product.name} to order`, 'success');
-                    }
-                    renderProducts();
-                    return;
-                }
-
-                // Normal card body click -> update selected item
                 selectedProductId = id;
-                selectedQty = 1;
+
+                if (product.stock <= 0) {
+                    showToast(`${product.name} is currently out of stock`, 'warning');
+                    selectedProductId = null;
+                    renderProducts();
+                    return;
+                }
+
+                cartInstance.addItem(product, 1);
                 renderProducts();
+            };
+        });
+
+        // Quantity Minus Button Click
+        gridContainer.querySelectorAll('.btn-card-minus').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                const item = cartInstance.getItems().find(i => i.product.id === id);
+                if (item) {
+                    cartInstance.updateQuantity(id, item.quantity - 1);
+                    renderProducts();
+                }
+            };
+        });
+
+        // Quantity Plus Button Click
+        gridContainer.querySelectorAll('.btn-card-plus').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                const product = productsInstance.getById(id);
+                if (product) {
+                    cartInstance.addItem(product, 1);
+                    renderProducts();
+                }
+            };
+        });
+
+        // Initial Add Button Click
+        gridContainer.querySelectorAll('.btn-card-add-initial').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                const product = productsInstance.getById(id);
+                if (product) {
+                    selectedProductId = id;
+                    if (product.stock <= 0) {
+                        showToast(`${product.name} is currently out of stock`, 'warning');
+                        renderProducts();
+                        return;
+                    }
+                    cartInstance.addItem(product, 1);
+                    renderProducts();
+                }
             };
         });
 
@@ -364,21 +383,27 @@ function setupMobilePOSTabs() {
     const TAB_ACTIVE   = 'flex-1 py-2.5 px-3 rounded-xl bg-emerald-500 text-white shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer font-bold';
     const TAB_INACTIVE = 'flex-1 py-2.5 px-3 rounded-xl text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition-all cursor-pointer font-bold';
 
-    /** Show the order panel inline – replaces product catalog on mobile */
+    /** Show the order panel — hides product catalog on mobile */
     function showOrderView() {
         if (window.innerWidth < 1024) {
             if (productSection) productSection.classList.add('hidden');
-            if (orderPanel)     orderPanel.classList.remove('hidden');
+            if (orderPanel) {
+                orderPanel.classList.remove('hidden');
+                orderPanel.classList.add('flex'); // must add flex since it was removed from static classes
+            }
         }
         if (tabOrder) tabOrder.className = TAB_ACTIVE;
         if (tabMenu)  tabMenu.className  = TAB_INACTIVE;
     }
 
-    /** Show the product catalog – hides order panel on mobile */
+    /** Show the product catalog — hides order panel on mobile */
     function showMenuView() {
         if (window.innerWidth < 1024) {
             if (productSection) productSection.classList.remove('hidden');
-            if (orderPanel)     orderPanel.classList.add('hidden');
+            if (orderPanel) {
+                orderPanel.classList.add('hidden');
+                orderPanel.classList.remove('flex');
+            }
         }
         if (tabMenu)  tabMenu.className  = TAB_ACTIVE;
         if (tabOrder) tabOrder.className = TAB_INACTIVE;
@@ -392,19 +417,60 @@ function setupMobilePOSTabs() {
     window._posTabReset = showMenuView;
 }
 
-function setupScrollToTopButton() {
+export function setupScrollToTopButton() {
+    // Find the main scrollable container (the <main> element with overflow-y-auto)
     const mainEl = document.querySelector('main');
-    const viewPosEl = document.getElementById('view-pos');
     const btnScrollToTop = document.getElementById('btn-scroll-to-top');
 
     if (!btnScrollToTop) return;
 
+    function show() {
+        btnScrollToTop.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-6', 'scale-90');
+        btnScrollToTop.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0', 'scale-100');
+    }
+
+    function hide() {
+        btnScrollToTop.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0', 'scale-100');
+        btnScrollToTop.classList.add('opacity-0', 'pointer-events-none', 'translate-y-6', 'scale-90');
+    }
+
+    function handleScroll() {
+        // Check all possible scroll containers
+        const mainScroll  = mainEl ? mainEl.scrollTop : 0;
+        const winScroll   = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        const totalScroll = Math.max(mainScroll, winScroll);
+        if (totalScroll > 120) {
+            show();
+        } else {
+            hide();
+        }
+    }
+
+    // Attach to the main scrollable container exactly once
+    if (mainEl && !mainEl._scrollToTopAttached) {
+        mainEl.addEventListener('scroll', handleScroll, { passive: true });
+        mainEl._scrollToTopAttached = true;
+    }
+
+    // Also listen on window/document as a fallback
+    if (!window._scrollToTopAttached) {
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        document.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', handleScroll, { passive: true });
+        window._scrollToTopAttached = true;
+    }
+
+    // Scroll to top on click
     btnScrollToTop.onclick = () => {
-        if (mainEl)    mainEl.scrollTo({ top: 0, behavior: 'smooth' });
-        if (viewPosEl) viewPosEl.scrollTo({ top: 0, behavior: 'smooth' });
+        if (mainEl) {
+            mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
         document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    // Initial check
+    handleScroll();
 
     if (window.lucide) {
         window.lucide.createIcons({ nameAttr: 'data-lucide' });

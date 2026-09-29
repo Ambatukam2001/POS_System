@@ -9,7 +9,7 @@ import { transactionsInstance } from './transactions.js';
 import { inventoryInstance } from './inventory.js';
 import { usersAdminInstance } from './users.js';
 import { customersInstance } from './customers.js';
-import { initPOSView } from './pos.js';
+import { initPOSView, setupScrollToTopButton } from './pos.js';
 import { renderDashboardSummary, exportReportsCSV } from './reports.js';
 import { initHeaderFunctions } from './header.js';
 import { openModal, closeModal, initCheckoutModal } from './modal.js';
@@ -40,8 +40,9 @@ class App {
         initCheckoutModal();
         initHeaderFunctions();
 
-        // 6. Initialize POS View
+        // 6. Initialize POS View & Scroll To Top
         initPOSView();
+        setupScrollToTopButton();
 
         // 7. Setup Modal Listeners & File Uploader
         this.setupModalEvents();
@@ -64,6 +65,39 @@ class App {
                 attrs: { strokeWidth: 2 }
             });
         }
+
+        // 11. Dismiss skeleton loading overlay now that app is ready
+        this.dismissSkeleton();
+
+        // 12. Live Supabase Realtime & Auto-Sync Update Handlers
+        window._renderAdminProducts = () => {
+            if (this.currentView === 'products') this.renderProductsTable();
+            if (this.currentView === 'inventory') this.renderInventoryTable();
+        };
+        window._renderCustomerDirectory = () => {
+            if (this.currentView === 'customers') this.renderCustomersTable();
+        };
+
+        window.addEventListener('supabase-products-updated', () => {
+            if (this.currentView === 'products') this.renderProductsTable();
+            if (this.currentView === 'inventory') this.renderInventoryTable();
+            initPOSView();
+        });
+
+        window.addEventListener('supabase-customers-updated', () => {
+            if (this.currentView === 'customers') this.renderCustomersTable();
+        });
+    }
+
+    dismissSkeleton() {
+        const skeleton = document.getElementById('app-skeleton-loader');
+        if (!skeleton) return;
+        // Fade out smoothly
+        skeleton.classList.add('skeleton-fade-out');
+        // Remove from DOM after transition
+        setTimeout(() => {
+            if (skeleton.parentNode) skeleton.parentNode.removeChild(skeleton);
+        }, 450);
     }
 
     setupAuthSession() {
@@ -71,15 +105,17 @@ class App {
         const mainApp = document.getElementById('main-app-container');
 
         if (!authInstance.isLoggedIn()) {
-            if (loginOverlay) loginOverlay.classList.remove('hidden');
-            if (mainApp) mainApp.classList.add('hidden');
-        } else {
-            if (loginOverlay) loginOverlay.classList.add('hidden');
-            if (mainApp) mainApp.classList.remove('hidden');
-            authInstance.applyPermissions();
-            const initialView = authInstance.isAdmin() ? 'dashboard' : 'pos';
-            this.navigateTo(initialView);
+            // Not authenticated — redirect to login page
+            window.location.replace('login.html');
+            return;
         }
+
+        // User is logged in — hide login overlay and show main app
+        if (loginOverlay) loginOverlay.classList.add('hidden');
+        if (mainApp) mainApp.classList.remove('hidden');
+        authInstance.applyPermissions();
+        const initialView = authInstance.isAdmin() ? 'dashboard' : 'pos';
+        this.navigateTo(initialView);
 
         // Bind Inline Login Form & Quick Buttons
         const loginForm = document.getElementById('inline-login-form');
@@ -247,13 +283,8 @@ class App {
             logoutBtn.onclick = () => {
                 if (confirm('Are you sure you want to log out of the terminal?')) {
                     authInstance.logout();
-                    const loginOverlay = document.getElementById('view-login');
-                    const mainApp = document.getElementById('main-app-container');
-
-                    if (mainApp) mainApp.classList.add('hidden');
-                    if (loginOverlay) loginOverlay.classList.remove('hidden');
-
                     showToast('Logged out of POS terminal.', 'info');
+                    setTimeout(() => { window.location.replace('login.html'); }, 400);
                 }
             };
         }

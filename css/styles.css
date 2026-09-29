@@ -578,4 +578,151 @@ html, body {
     transform: scale(0.92);
 }
 
+/* Hide Profile Modal Logout Button on Desktop (Only Visible on Mobile < 1024px) */
+@media (min-width: 1024px) {
+    #modal-profile-logout-container,
+    #modal-profile-logout-btn {
+        display: none !important;
+    }
+}
 
+
+/* ==========================================
+   SKELETON LOADING SYSTEM
+   ========================================== */
+
+/* Core shimmer animation */
+@keyframes skeleton-shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+}
+
+/* Base skeleton element — applies to any box */
+.skeleton-box {
+    background: linear-gradient(
+        90deg,
+        #f1f5f9 0%,
+        #e2e8f0 30%,
+        #cbd5e1 50%,
+        #e2e8f0 70%,
+        #f1f5f9 100%
+    );
+    background-size: 600px 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    border-radius: 10px;
+}
+
+/* Product card skeleton — matches pos-product-card proportions */
+.skeleton-card {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #f1f5f9;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+/* Table row skeleton */
+.skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f8fafc;
+}
+
+/* Full-page app loading overlay */
+#app-skeleton-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #ffffff;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#app-skeleton-loader.skeleton-fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Skeleton sidebar */
+.skeleton-sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #34d27e 0%, #2abf72 100%);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (max-width: 1023px) {
+    .skeleton-sidebar { display: none; }
+}
+
+.skeleton-sidebar .skeleton-box {
+    background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0.08) 0%,
+        rgba(255,255,255,0.2)  30%,
+        rgba(255,255,255,0.28) 50%,
+        rgba(255,255,255,0.2)  70%,
+        rgba(255,255,255,0.08) 100%
+    );
+    background-size: 600px 100%;
+}
+
+/* Skeleton main content */
+.skeleton-main {
+    flex: 1;
+    background: #ffffff;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+}
+
+/* Skeleton order panel */
+.skeleton-order-panel {
+    width: 340px;
+    flex-shrink: 0;
+    background: #ffffff;
+    border-left: 1px solid #f1f5f9;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@media (max-width: 1023px) {
+    .skeleton-order-panel { display: none; }
+}
+
+/* POS product skeleton grid */
+#pos-product-skeleton {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+    width: 100%;
+}
+
+@media (max-width: 640px) {
+    #pos-product-skeleton {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Order panel: always flex on desktop regardless of JS-controlled hidden class */
+@media (min-width: 1024px) {
+    #order-panel {
+        display: flex !important;
+        flex-direction: column;
+    }
+}

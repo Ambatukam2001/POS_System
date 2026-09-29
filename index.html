@@ -27,6 +27,9 @@
     <!-- ApexCharts / Flowbite Charts CDN -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
+    <!-- Supabase JS Client SDK CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
 
@@ -36,10 +39,199 @@
 
 <body class="h-screen w-screen bg-white text-slate-800 antialiased overflow-hidden">
 
+    <!-- AUTH GUARD: Redirect unauthenticated users to login.html immediately -->
+    <script>
+        (function() {
+            try {
+                // The storage utility in utils.js prefixes keys with 'pos_'
+                var session = localStorage.getItem('pos_current_user');
+                var user = session ? JSON.parse(session) : null;
+                if (!user || !user.username) {
+                    // Not logged in — send to login page
+                    if (window.location.pathname.indexOf('login.html') === -1) {
+                        window.location.replace('login.html');
+                    }
+                }
+            } catch(e) {
+                window.location.replace('login.html');
+            }
+        })();
+    </script>
+
+    <!-- ========================================== -->
+    <!-- APP SKELETON LOADER (shows while JS boots) -->
+    <!-- ========================================== -->
+    <div id="app-skeleton-loader">
+
+        <!-- Skeleton Sidebar (Desktop only) -->
+        <div class="skeleton-sidebar">
+            <!-- Brand logo slot -->
+            <div class="flex items-center gap-3 mb-4">
+                <div class="skeleton-box w-10 h-10 rounded-2xl shrink-0"></div>
+                <div class="flex flex-col gap-2 flex-1">
+                    <div class="skeleton-box h-3 w-24 rounded"></div>
+                    <div class="skeleton-box h-2 w-16 rounded"></div>
+                </div>
+            </div>
+            <!-- Nav items -->
+            <div class="flex flex-col gap-3 mt-2">
+                <div class="skeleton-box h-9 w-full rounded-xl"></div>
+                <div class="skeleton-box h-9 w-full rounded-xl opacity-80"></div>
+                <div class="skeleton-box h-9 w-full rounded-xl opacity-70"></div>
+                <div class="skeleton-box h-9 w-full rounded-xl opacity-60"></div>
+                <div class="skeleton-box h-9 w-full rounded-xl opacity-50"></div>
+                <div class="skeleton-box h-9 w-full rounded-xl opacity-40"></div>
+            </div>
+            <!-- User avatar at bottom -->
+            <div class="mt-auto flex items-center gap-3 pt-4">
+                <div class="skeleton-box w-9 h-9 rounded-full shrink-0"></div>
+                <div class="flex flex-col gap-1.5 flex-1">
+                    <div class="skeleton-box h-2.5 w-20 rounded"></div>
+                    <div class="skeleton-box h-2 w-14 rounded"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skeleton Main Content -->
+        <div class="skeleton-main">
+            <!-- Header bar -->
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3">
+                    <div class="skeleton-box h-6 w-40 rounded-lg"></div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="skeleton-box h-8 w-8 rounded-full"></div>
+                    <div class="skeleton-box h-8 w-32 rounded-xl"></div>
+                </div>
+            </div>
+            <!-- Search bar -->
+            <div class="skeleton-box h-11 w-full rounded-2xl"></div>
+            <!-- Category pills -->
+            <div class="flex gap-2 overflow-hidden">
+                <div class="skeleton-box h-8 w-20 rounded-full shrink-0"></div>
+                <div class="skeleton-box h-8 w-24 rounded-full shrink-0 opacity-80"></div>
+                <div class="skeleton-box h-8 w-20 rounded-full shrink-0 opacity-60"></div>
+                <div class="skeleton-box h-8 w-28 rounded-full shrink-0 opacity-50"></div>
+                <div class="skeleton-box h-8 w-16 rounded-full shrink-0 opacity-40"></div>
+            </div>
+            <!-- Product card grid -->
+            <div id="pos-product-skeleton">
+                <!-- 10 skeleton product cards -->
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-3/4 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-1/2 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-2/3 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-1/2 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-4/5 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-2/5 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-3/5 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-1/3 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-3/4 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-2/5 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-2/3 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-1/2 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-4/5 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-1/3 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-3/5 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-2/5 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-3/4 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-1/2 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton-box w-full h-24 rounded-xl"></div>
+                    <div class="skeleton-box h-3 w-2/3 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-1/3 rounded"></div>
+                    <div class="skeleton-box h-7 w-full rounded-xl mt-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skeleton Order Panel (Desktop only) -->
+        <div class="skeleton-order-panel">
+            <div class="skeleton-box h-5 w-32 rounded-lg"></div>
+            <div class="skeleton-box h-px w-full rounded opacity-30 mt-1"></div>
+            <!-- Order item rows -->
+            <div class="flex flex-col gap-3 mt-2">
+                <div class="skeleton-row rounded-xl" style="background:#f8fafc">
+                    <div class="skeleton-box w-9 h-9 rounded-xl shrink-0"></div>
+                    <div class="flex flex-col gap-1.5 flex-1">
+                        <div class="skeleton-box h-2.5 w-3/4 rounded"></div>
+                        <div class="skeleton-box h-2 w-1/2 rounded"></div>
+                    </div>
+                    <div class="skeleton-box h-4 w-10 rounded shrink-0"></div>
+                </div>
+                <div class="skeleton-row rounded-xl" style="background:#f8fafc">
+                    <div class="skeleton-box w-9 h-9 rounded-xl shrink-0"></div>
+                    <div class="flex flex-col gap-1.5 flex-1">
+                        <div class="skeleton-box h-2.5 w-2/3 rounded"></div>
+                        <div class="skeleton-box h-2 w-1/3 rounded"></div>
+                    </div>
+                    <div class="skeleton-box h-4 w-10 rounded shrink-0"></div>
+                </div>
+                <div class="skeleton-row rounded-xl" style="background:#f8fafc">
+                    <div class="skeleton-box w-9 h-9 rounded-xl shrink-0"></div>
+                    <div class="flex flex-col gap-1.5 flex-1">
+                        <div class="skeleton-box h-2.5 w-4/5 rounded"></div>
+                        <div class="skeleton-box h-2 w-2/5 rounded"></div>
+                    </div>
+                    <div class="skeleton-box h-4 w-10 rounded shrink-0"></div>
+                </div>
+            </div>
+            <!-- Totals -->
+            <div class="mt-auto flex flex-col gap-3 pt-4">
+                <div class="skeleton-box h-px w-full rounded opacity-30"></div>
+                <div class="flex justify-between">
+                    <div class="skeleton-box h-2.5 w-16 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-12 rounded"></div>
+                </div>
+                <div class="flex justify-between">
+                    <div class="skeleton-box h-2.5 w-20 rounded"></div>
+                    <div class="skeleton-box h-2.5 w-12 rounded"></div>
+                </div>
+                <div class="skeleton-box h-11 w-full rounded-full mt-2"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- ========================================== -->
     <!-- VIEW 0: HALF-AND-HALF SPLIT SCREEN LOGIN   -->
+    <!-- (Kept as fallback overlay for in-app use)  -->
     <!-- ========================================== -->
-    <div id="view-login" class="fixed inset-0 z-50 bg-white flex flex-col md:flex-row overflow-y-auto">
+    <div id="view-login" class="fixed inset-0 z-50 bg-white flex flex-col md:flex-row overflow-y-auto hidden">
 
         <!-- MOBILE TOP COMPACT BRANDING HEADER (Visible only on mobile < md) -->
         <div class="md:hidden bg-sidebar-gradient p-5 text-white flex items-center justify-between shadow-md shrink-0">
@@ -471,7 +663,6 @@
                     </button>
                     <button id="pos-tab-order" type="button" class="flex-1 py-2.5 px-3 rounded-xl text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition-all cursor-pointer font-bold">
                         <i data-lucide="shopping-cart" class="w-4 h-4"></i>
-                        <span>My Order</span>
                         <span id="pos-mobile-cart-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">0</span>
                     </button>
                 </div>
@@ -563,7 +754,7 @@
 
                     <!-- RIGHT ORDER PANEL (MY ORDER) -->
                     <aside id="order-panel"
-                        class="hidden w-full lg:w-[340px] xl:w-[380px] bg-white rounded-3xl border border-slate-200/80 p-4 md:p-6 flex flex-col justify-between shrink-0 relative z-10 lg:sticky lg:top-0 overflow-y-auto">
+                        class="hidden w-full lg:w-[340px] xl:w-[380px] bg-white rounded-3xl border border-slate-200/80 p-4 md:p-6 flex-col justify-between shrink-0 relative z-10 lg:sticky lg:top-0 overflow-y-auto">
 
                         <div class="space-y-4">
                             <!-- Header -->
@@ -1361,19 +1552,18 @@
             <!-- Vibrant Green Outer Container (Matching Sidebar Theme) -->
             <div class="bg-sidebar-gradient py-2 px-3 shadow-[0_-8px_30px_rgba(5,150,105,0.4)] border-t border-emerald-400/40 relative">
                 
-                <!-- Inner White Capsule Floating Island (Icon + Label, Scrollbar Hidden) -->
-                <nav class="bg-white rounded-full px-2 py-1.5 shadow-2xl flex items-center justify-around max-w-xl mx-auto border border-white/90 overflow-x-auto no-scrollbar gap-0.5 transition-all duration-300">
+                <!-- Inner White Capsule Floating Island (Icons only, Scrollbar Hidden) -->
+                <nav class="bg-white rounded-full px-2 py-1.5 shadow-2xl flex items-center justify-around max-w-xl mx-auto border border-white/90 overflow-x-auto no-scrollbar gap-1 transition-all duration-300">
                     
                     <!-- ADMIN ONLY: Overview / Dashboard -->
                     <button type="button" 
                         data-mobile-nav-target="dashboard" 
                         data-view-target="dashboard"
                         data-admin-only
-                        class="mobile-nav-btn mobile-nav-active group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl"
+                        class="mobile-nav-btn mobile-nav-active group shrink-0 flex flex-col items-center p-2 rounded-2xl"
                         title="Overview">
-                        <i data-lucide="layout-grid" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Overview</span>
-                        <span class="mobile-nav-indicator mt-0.5"></span>
+                        <i data-lucide="layout-grid" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator mt-1"></span>
                     </button>
 
                     <!-- CASHIER ONLY: POS Menu -->
@@ -1381,11 +1571,10 @@
                         data-mobile-nav-target="pos" 
                         data-view-target="pos"
                         data-cashier-only
-                        class="mobile-nav-btn mobile-nav-active group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl hidden"
+                        class="mobile-nav-btn mobile-nav-active group shrink-0 flex flex-col items-center p-2 rounded-2xl hidden"
                         title="Menu">
-                        <i data-lucide="shopping-cart" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Menu</span>
-                        <span class="mobile-nav-indicator mt-0.5"></span>
+                        <i data-lucide="shopping-cart" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator mt-1"></span>
                     </button>
 
                     <!-- ADMIN ONLY: Products -->
@@ -1393,11 +1582,10 @@
                         data-mobile-nav-target="products" 
                         data-view-target="products"
                         data-admin-only
-                        class="mobile-nav-btn group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl"
+                        class="mobile-nav-btn group shrink-0 flex flex-col items-center p-2 rounded-2xl"
                         title="Products">
-                        <i data-lucide="package" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Products</span>
-                        <span class="mobile-nav-indicator opacity-0 mt-0.5"></span>
+                        <i data-lucide="package" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator opacity-0 mt-1"></span>
                     </button>
 
                     <!-- ADMIN ONLY: Inventory -->
@@ -1405,22 +1593,20 @@
                         data-mobile-nav-target="inventory" 
                         data-view-target="inventory"
                         data-admin-only
-                        class="mobile-nav-btn group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl"
+                        class="mobile-nav-btn group shrink-0 flex flex-col items-center p-2 rounded-2xl"
                         title="Inventory">
-                        <i data-lucide="boxes" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Inventory</span>
-                        <span class="mobile-nav-indicator opacity-0 mt-0.5"></span>
+                        <i data-lucide="boxes" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator opacity-0 mt-1"></span>
                     </button>
 
                     <!-- ALL: Transactions -->
                     <button type="button" 
                         data-mobile-nav-target="transactions" 
                         data-view-target="transactions"
-                        class="mobile-nav-btn group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl"
+                        class="mobile-nav-btn group shrink-0 flex flex-col items-center p-2 rounded-2xl"
                         title="Transactions">
-                        <i data-lucide="receipt" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Txns</span>
-                        <span class="mobile-nav-indicator opacity-0 mt-0.5"></span>
+                        <i data-lucide="receipt" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator opacity-0 mt-1"></span>
                     </button>
 
                     <!-- ADMIN ONLY: Reports -->
@@ -1428,11 +1614,10 @@
                         data-mobile-nav-target="reports" 
                         data-view-target="reports"
                         data-admin-only
-                        class="mobile-nav-btn group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl"
+                        class="mobile-nav-btn group shrink-0 flex flex-col items-center p-2 rounded-2xl"
                         title="Reports">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Reports</span>
-                        <span class="mobile-nav-indicator opacity-0 mt-0.5"></span>
+                        <i data-lucide="bar-chart-3" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator opacity-0 mt-1"></span>
                     </button>
 
                     <!-- ADMIN ONLY: Users -->
@@ -1440,32 +1625,29 @@
                         data-mobile-nav-target="users" 
                         data-view-target="users"
                         data-admin-only
-                        class="mobile-nav-btn group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl"
+                        class="mobile-nav-btn group shrink-0 flex flex-col items-center p-2 rounded-2xl"
                         title="Users">
-                        <i data-lucide="users" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Users</span>
-                        <span class="mobile-nav-indicator opacity-0 mt-0.5"></span>
+                        <i data-lucide="users" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator opacity-0 mt-1"></span>
                     </button>
 
                     <!-- ALL: Customers -->
                     <button type="button" 
                         data-mobile-nav-target="customers" 
                         data-view-target="customers"
-                        class="mobile-nav-btn group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl"
+                        class="mobile-nav-btn group shrink-0 flex flex-col items-center p-2 rounded-2xl"
                         title="Customers">
-                        <i data-lucide="user-check" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Customers</span>
-                        <span class="mobile-nav-indicator opacity-0 mt-0.5"></span>
+                        <i data-lucide="user-check" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator opacity-0 mt-1"></span>
                     </button>
 
                     <!-- PROFILE & LOGOUT TRIGGER -->
                     <button type="button" 
                         id="btn-mobile-nav-profile"
-                        class="mobile-nav-btn group shrink-0 flex flex-col items-center px-2 py-1.5 rounded-2xl text-slate-800 hover:text-emerald-600"
+                        class="mobile-nav-btn group shrink-0 flex flex-col items-center p-2 rounded-2xl text-slate-800 hover:text-emerald-600"
                         title="Profile">
-                        <i data-lucide="user" class="w-5 h-5 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
-                        <span class="text-[9px] font-bold mt-0.5 leading-none">Profile</span>
-                        <span class="mobile-nav-indicator opacity-0 mt-0.5"></span>
+                        <i data-lucide="user" class="w-7 h-7 stroke-[2.2] group-hover:scale-110 transition-transform"></i>
+                        <span class="mobile-nav-indicator opacity-0 mt-1"></span>
                     </button>
 
                 </nav>
@@ -1835,8 +2017,8 @@
                     </button>
                 </div>
 
-                <!-- Prominent Log Out Button under profile modal (Matching User Request) -->
-                <div class="pt-3 border-t border-slate-100">
+                <!-- Log Out Button under profile modal (Mobile Only) -->
+                <div id="modal-profile-logout-container" class="pt-3 border-t border-slate-100 lg:hidden">
                     <button type="button" id="modal-profile-logout-btn"
                         class="w-full py-2.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold text-xs transition-all flex items-center justify-center gap-2 border border-rose-200/80 active:scale-95 cursor-pointer">
                         <i data-lucide="log-out" class="w-4 h-4 text-rose-600"></i>
@@ -2113,9 +2295,6 @@
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Application Initialization Script -->
-    <script type="module" src="js/app.js"></script>
-
     <!-- FORGOT PASSWORD / CREDENTIALS RESET MODAL -->
     <div id="forgot-password-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
         <div class="modal-backdrop fixed inset-0 bg-slate-950/60 backdrop-blur-md opacity-0 transition-opacity duration-300"
@@ -2368,10 +2547,12 @@
 
                 </div>
 
-    <!-- ALWAYS VISIBLE FLOATING SCROLL TO TOP BUTTON -->
-    <button type="button" id="btn-scroll-to-top" aria-label="Scroll to top" class="fixed bottom-24 right-5 lg:bottom-8 lg:right-8 z-[99999] w-12 h-12 rounded-full bg-slate-900 text-white shadow-[0_8px_30px_rgba(0,0,0,0.4)] border-2 border-emerald-400 flex items-center justify-center transition-all duration-300 active:scale-90 hover:scale-110 cursor-pointer group">
+    <!-- FLOATING SCROLL TO TOP BUTTON (APPEARS WHEN SCROLLING DOWN) -->
+    <button type="button" id="btn-scroll-to-top" aria-label="Scroll to top" class="fixed bottom-24 right-5 lg:bottom-8 lg:right-8 z-[99999] w-12 h-12 rounded-full bg-slate-900 text-white shadow-[0_8px_30px_rgba(0,0,0,0.4)] border-2 border-emerald-400 flex items-center justify-center transition-all duration-300 active:scale-90 hover:scale-110 cursor-pointer group opacity-0 pointer-events-none translate-y-6 scale-90">
         <i data-lucide="chevron-up" class="w-6 h-6 text-emerald-400 group-hover:-translate-y-0.5 transition-transform stroke-[3]"></i>
     </button>
+    <!-- MAIN POS APPLICATION ENTRY SCRIPT -->
+    <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

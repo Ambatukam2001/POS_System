@@ -175,9 +175,9 @@ export class CartManager {
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <div class="flex items-center bg-slate-100/80 rounded-full p-1 border border-slate-200/50">
-                            <button class="w-5 h-5 rounded-full flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-xs transition-all text-xs font-bold btn-decrement" data-id="${item.product.id}">-</button>
-                            <span class="w-6 text-center text-xs font-bold text-slate-800">${item.quantity}</span>
-                            <button class="w-5 h-5 rounded-full flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-xs transition-all text-xs font-bold btn-increment" data-id="${item.product.id}">+</button>
+                            <button type="button" class="w-6 h-6 rounded-full flex items-center justify-center text-slate-700 hover:bg-rose-500 hover:text-white hover:shadow-xs transition-all text-xs font-bold btn-decrement cursor-pointer active:scale-90" data-id="${item.product.id}" title="Decrease quantity">-</button>
+                            <span class="w-6 text-center text-xs font-bold text-slate-800 select-none">${item.quantity}</span>
+                            <button type="button" class="w-6 h-6 rounded-full flex items-center justify-center text-slate-700 hover:bg-emerald-500 hover:text-white hover:shadow-xs transition-all text-xs font-bold btn-increment cursor-pointer active:scale-90" data-id="${item.product.id}" title="Increase quantity">+</button>
                         </div>
                         <span class="text-xs font-bold text-slate-900 w-16 text-right">${formatCurrency(item.product.price * item.quantity)}</span>
                         <button class="text-slate-300 hover:text-rose-500 transition-colors p-1 btn-remove" data-id="${item.product.id}">
@@ -245,6 +245,13 @@ export class CartManager {
 
         // Re-bind click event handlers for cart item buttons
         this.bindCartEvents();
+
+        // Sync POS menu cards quantity controls if POS view is active
+        if (window._renderPOSProducts && !this._preventPOSSync) {
+            this._preventPOSSync = true;
+            window._renderPOSProducts();
+            this._preventPOSSync = false;
+        }
 
         // Refresh icons
         if (window.lucide) {

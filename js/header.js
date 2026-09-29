@@ -133,11 +133,8 @@ function setupUserProfileModal() {
         modalLogoutBtn.onclick = () => {
             closeModal('user-profile-modal');
             authInstance.logout();
-            const loginView = document.getElementById('view-login');
-            const mainApp = document.getElementById('main-app-container');
-            if (loginView) loginView.classList.remove('hidden');
-            if (mainApp) mainApp.classList.add('hidden');
             showToast('Logged out successfully.', 'info');
+            setTimeout(() => { window.location.replace('login.html'); }, 400);
         };
     }
 }

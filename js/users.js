@@ -5,6 +5,7 @@
 import { storage, generateId } from './utils.js';
 import { showToast } from './toast.js';
 import { ROLES } from './auth.js';
+import { supabaseClient } from './supabase.js';
 
 const INITIAL_USERS = [
     {
@@ -52,6 +53,46 @@ const INITIAL_USERS = [
 export class UserAdminManager {
     constructor() {
         this.users = storage.get('users', INITIAL_USERS);
+        this.syncFromSupabase();
+    }
+
+    async syncFromSupabase() {
+        try {
+            const cloudData = await supabaseClient.getUsers();
+
+            if (cloudData === null) return; // network error
+
+            if (cloudData.length === 0) {
+                // Supabase empty — seed local users
+                await supabaseClient.seedUsers(this.users);
+                const seeded = await supabaseClient.getUsers();
+                if (seeded && seeded.length > 0) {
+                    this.users = this._mapCloud(seeded);
+                    this.save();
+                }
+            } else {
+                const cloudMapped = this._mapCloud(cloudData);
+                const cloudUsernames = new Set(cloudMapped.map(u => u.username.toLowerCase()));
+                const localOnly = this.users.filter(u => !cloudUsernames.has(u.username.toLowerCase()));
+                this.users = [...cloudMapped, ...localOnly];
+                this.save();
+            }
+        } catch (e) {
+            console.warn('[Supabase] Users sync notice:', e.message);
+        }
+    }
+
+    _mapCloud(cloudData) {
+        return cloudData.map(u => ({
+            id: u.id ? String(u.id) : generateId('USR'),
+            name: u.name,
+            username: u.username,
+            password: u.password || (u.role === ROLES.ADMIN ? 'admin123' : 'cashier123'),
+            email: u.email || `${u.username}@pos.system`,
+            role: u.role || ROLES.CASHIER,
+            status: u.status || 'Active',
+            lastLogin: u.last_login || u.lastLogin || 'Never'
+        }));
     }
 
     save() {
@@ -76,6 +117,7 @@ export class UserAdminManager {
 
         this.users.push(newUser);
         this.save();
+        supabaseClient.upsertUser(newUser);
         showToast(`Staff account ${newUser.name} created successfully`, 'success');
         return newUser;
     }
@@ -85,6 +127,7 @@ export class UserAdminManager {
         if (index !== -1) {
             this.users[index] = { ...this.users[index], ...data };
             this.save();
+            supabaseClient.upsertUser(this.users[index]);
             showToast(`User details updated`, 'info');
             return this.users[index];
         }

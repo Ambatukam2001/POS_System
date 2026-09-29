@@ -10,6 +10,7 @@ import { inventoryInstance } from './inventory.js';
 import { authInstance } from './auth.js';
 import { customersInstance } from './customers.js';
 import { showToast } from './toast.js';
+import { supabaseClient } from './supabase.js';
 
 export function openModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -75,7 +76,11 @@ export function initCheckoutModal() {
             const customerPhoneInput = document.getElementById('checkout-customer-phone-input');
             const customerEmailInput = document.getElementById('checkout-customer-email-input');
 
-            const activeName = cartInstance.selectedCustomer || 'Walk-in Guest';
+            // selectedCustomer can be an object {id, name, ...} or a plain string — handle both
+            const selCust = cartInstance.selectedCustomer;
+            const activeName = (selCust && typeof selCust === 'object' && selCust.name)
+                ? selCust.name
+                : (typeof selCust === 'string' && selCust ? selCust : 'Walk-in Guest');
             if (customerNameInput) customerNameInput.value = activeName;
 
             // Lookup existing customer info if present
@@ -297,21 +302,27 @@ export function initCheckoutModal() {
             const phoneInput = document.getElementById('checkout-customer-phone-input');
             const emailInput = document.getElementById('checkout-customer-email-input');
 
-            const customerName = (nameInput && nameInput.value.trim()) 
-                ? nameInput.value.trim() 
-                : (cartInstance.selectedCustomer || 'Walk-in Guest');
+            // selectedCustomer can be an object {id, name, ...} or a plain string — handle both
+            const rawCust = cartInstance.selectedCustomer;
+            const customerName = (nameInput && nameInput.value.trim())
+                ? nameInput.value.trim()
+                : (rawCust && typeof rawCust === 'object' && rawCust.name)
+                    ? rawCust.name
+                    : (typeof rawCust === 'string' && rawCust ? rawCust : 'Walk-in Guest');
             const customerPhone = phoneInput ? phoneInput.value.trim() : '';
             const customerEmail = emailInput ? emailInput.value.trim() : '';
             
             // Update cart selected customer reference
             cartInstance.selectedCustomer = customerName;
 
-            // Save/update customer details in Customer Directory database
+            // Save/update customer details in Customer Directory database & sync to Supabase
+            let customerRecord = null;
             if (customerName && customerName !== 'Walk-in Guest' && customerName !== 'Walk-in Customer') {
-                customersInstance.addOrUpdateCustomer({
+                customerRecord = customersInstance.addOrUpdateCustomer({
                     name: customerName,
                     phone: customerPhone,
-                    email: customerEmail
+                    email: customerEmail,
+                    purchaseAmount: total
                 });
             }
 
@@ -334,12 +345,33 @@ export function initCheckoutModal() {
                 change
             });
 
-            // 2. Deduct Inventory Stock
-            cartInstance.getItems().forEach(item => {
+            // 2. Deduct Inventory Stock & Sync to Supabase
+            const items = cartInstance.getItems();
+            items.forEach(item => {
                 productsInstance.deductStock(item.product.id, item.quantity);
+                const updatedProduct = productsInstance.getById(item.product.id);
+                if (updatedProduct) {
+                    supabaseClient.updateProductStock(item.product.id, updatedProduct.stock, updatedProduct.sku);
+                }
             });
 
-            // 3. Clear Cart
+            // 3. Sync Order to Supabase Cloud Database asynchronously
+            const customerId = customerRecord && !isNaN(Number(customerRecord.id)) ? Number(customerRecord.id) : null;
+            const cashierId = currentUser && !isNaN(Number(currentUser.id)) ? Number(currentUser.id) : null;
+
+            supabaseClient.createOrder({
+                order_number: transaction.id || `ORD-${Date.now()}`,
+                cashier_id: cashierId,
+                customer_id: customerId,
+                subtotal: transaction.subtotal,
+                discount: transaction.discount,
+                tax: transaction.tax,
+                total: transaction.total,
+                payment_method: displayPaymentMethod,
+                payment_status: 'Paid'
+            }, items);
+
+            // 4. Clear Cart
             cartInstance.clearCart();
 
             // 4. Close Checkout Modal & Show Digital Thermal Receipt

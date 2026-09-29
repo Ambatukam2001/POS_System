@@ -83,7 +83,9 @@ export class TransactionManager {
             id: generateId('TXN'),
             date: new Date().toISOString(),
             cashier: cashier || 'Dimacaling',
-            customer: customer ? customer.name : 'Walk-in Customer',
+            customer: (typeof customer === 'object' && customer && customer.name) 
+                ? customer.name 
+                : (typeof customer === 'string' && customer ? customer : 'Walk-in Customer'),
             items: cartItems.map(item => ({
                 id: item.product.id,
                 name: item.product.name,
